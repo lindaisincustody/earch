@@ -132,7 +132,7 @@ const HomePage = () => {
                     style={buttonStyle}
                     onClick={() => setModal({ open: true, title: item.title })}
                   >
-                    <img src={`/${item.id}.svg`} alt={item.title} style={imageStyle} />
+                    <img src={`${item.id}.svg`} alt={item.title} style={imageStyle} />
                   </button>
                 </div>
               </div>
