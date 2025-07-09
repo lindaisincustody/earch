@@ -34,7 +34,7 @@ const getBBox = dataList => {
   return { minX, minY, width: maxX - minX, height: maxY - minY };
 };
 
-const Background = () => {
+const Background = ({ isDarkMode }) => {
   const svgRef = useRef(null);
   useEffect(() => {
     const svg = svgRef.current;
@@ -43,10 +43,10 @@ const Background = () => {
     svg.setAttribute('viewBox', `${minX} ${minY} ${width} ${height}`);
     const rc = rough.svg(svg);
     pathDataList.forEach(d => {
-      const shape = rc.path(d, { stroke: '#333', strokeWidth: 1, roughness: 1.2, fill: 'none' });
+      const shape = rc.path(d, { stroke: isDarkMode ? '#FFFFFF' : '#000000', strokeWidth: 1, roughness: 1.2, fill: 'none' });
       svg.appendChild(shape);
     });
-  }, []);
+  }, [isDarkMode]);
 
   return (
     <svg
@@ -67,6 +67,8 @@ const HomePage = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+const [isDarkMode, setIsDarkMode] = useState(true);
+
   const containerStyle = {
     position: 'relative',
     display: 'flex',
@@ -76,6 +78,7 @@ const HomePage = () => {
     margin: 0,
     overflowY: isMobile ? 'auto' : 'hidden',
     filter: modal.open ? 'blur(4px)' : 'none', // blur background when modal open
+    transition: 'filter 0.3s ease-in-out',
   };
 
   const contentWrapperStyle = {
@@ -91,6 +94,8 @@ const HomePage = () => {
     marginBottom: '10px',
     marginLeft: '10px',
     zIndex: 1,
+    color: '#BEBEBE',
+    transition: 'color 0.3s ease-in-out',
   };
 
   const gridStyle = {
@@ -105,6 +110,38 @@ const HomePage = () => {
     zIndex: 1,
   };
 
+  const backgroundLayerStyle = {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  
+  background: isDarkMode? 'linear-gradient(to bottom, #000013, #0E0058)' : 'linear-gradient(to bottom, #F2F2F9, #FFFFFF)', // darker to your target
+ transition: 'background 0.5s ease-in-out',
+  zIndex: 0,
+  
+};
+useEffect(() => {
+  const styleTag = document.createElement('style');
+  styleTag.innerHTML = `
+    @keyframes fadeZoomIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+  `;
+  document.head.appendChild(styleTag);
+
+  return () => {
+    document.head.removeChild(styleTag); // Clean up on unmount
+  };
+}, []);
   const items = [
     { id: 1, title: 'APIE MUS' },
     { id: 2, title: 'IŠMANŪS NAMAI' },
@@ -120,20 +157,69 @@ const HomePage = () => {
   return (
     <>
       <div style={containerStyle}>
-        <Background />
+        <div
+    style={{
+      ...backgroundFadeLayerStyle,
+      background: 'linear-gradient(to bottom, #000013, #0E0058)',
+      opacity: isDarkMode ? 1 : 0,
+    }}
+  />
+  <div
+    style={{
+      ...backgroundFadeLayerStyle,
+      background: 'linear-gradient(to bottom, #f0f0f0, #ffffff)',
+      opacity: isDarkMode ? 0 : 1,
+    }}
+  />
+        
+        <Background isDarkMode={isDarkMode} />
         <div style={contentWrapperStyle}>
-          <h2 style={pageTitleStyle}>ELEKTROS ARCHITEKTŪRA</h2>
+        <div style={pageTitleRowStyle}>
+  <h2 style={{ ...pageTitleStyle, color: isDarkMode ? '#BEBEBE' : '#222' }}>
+    ELEKTROS ARCHITEKTŪRA
+  </h2>
+  <div
+    onClick={() => setIsDarkMode(prev => !prev)}
+    style={{
+      ...switchTrackStyle,
+      backgroundColor: isDarkMode ? '#444' : '#ccc',
+    }}
+  >
+    <div
+      style={{
+        ...switchThumbStyle,
+        transform: isDarkMode ? 'translateX(2px)' : 'translateX(20px)',
+        backgroundColor: isDarkMode ? '#111' : '#f5f5f5',
+      }}
+    >
+      <img
+        src={isDarkMode ? `${process.env.PUBLIC_URL}/moon.svg` : `${process.env.PUBLIC_URL}/sun.svg`}
+        alt={isDarkMode ? 'Moon' : 'Sun'}
+        style={{ width: '12px', height: '12px' }}
+      />
+    </div>
+  </div>
+</div>
           <div style={gridStyle}>
             {items.map(item => (
-              <div key={item.id} style={{ ...cellWrapperStyle }}>
-                <div style={titleContainerStyle}><h3 style={titleStyle}>{item.title}</h3></div>
-                <div style={buttonContainerStyle}>
-                  <button
-                    style={buttonStyle}
-                    onClick={() => setModal({ open: true, title: item.title })}
-                  >
-                    <img src={`${item.id}.svg`} alt={item.title} style={imageStyle} />
+              <div key={item.id} style={{ ...cellWrapperStyle, border: isDarkMode ? '4px double #BEBEBE' : '4px double #333',
+    color: isDarkMode ? '#BEBEBE' : '#222', }}>
+                <div style={titleContainerStyle}>
+    <h3 style={titleStyle}>{item.title}</h3>
+  </div>
+  <div style={buttonContainerStyle}>
+    <div style={getFrameWrapperStyle(isDarkMode)}>
+      <button
+        style={getButtonStyle(isDarkMode)}
+        onClick={() => setModal({ open: true, title: item.title })}
+      >
+        <img
+          src={`${process.env.PUBLIC_URL}/${item.id}.png`}
+          alt={item.title}
+          style={imageStyle}
+        />
                   </button>
+                </div>
                 </div>
               </div>
             ))}
@@ -143,7 +229,7 @@ const HomePage = () => {
 
       {modal.open && (
         <div style={modalOverlayStyle} onClick={() => setModal({ open: false, title: '' })}>
-          <div style={modalStyle} onClick={e => e.stopPropagation()}>
+  <div style={modalStyle} onClick={() => setModal({ open: false, title: '' })}>
             <h3 style={modalTitleStyle}><b>{modal.title}</b></h3>
             <hr></hr>
             <div style={modalContentStyle}>
@@ -160,16 +246,78 @@ const HomePage = () => {
 
 // Shared styles for cells and modal
 const cellWrapperStyle = {
-  width: '100%', aspectRatio: '1 / 1', border: '2px solid #333', display: 'flex', flexDirection: 'column', alignItems: 'stretch', boxSizing: 'border-box', padding: '0', background: 'transparent',
+  width: '100%', aspectRatio: '1 / 1', border: '3px double #333', display: 'flex', flexDirection: 'column', alignItems: 'stretch', boxSizing: 'border-box', padding: '0', background: 'transparent', transition: 'border 0.3s ease-in-out, color 0.3s ease-in-out',
 };
 const titleContainerStyle = { padding: '10px', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center' };
-const titleStyle = { fontSize: '0.9rem', fontWeight: 'bold', textAlign: 'left', margin: 0 };
-const buttonContainerStyle = { flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' };
-const buttonStyle = { width: '60%', height: '60%', padding: 0, border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'linear-gradient(135deg, #f0f0f0 0%, #d9d9d9 25%, #d9d9d9 75%, #f0f0f0 100%)', borderRadius: '8px', boxShadow: 'inset 1px 1px 3px rgba(255,255,255,0.8), inset -1px -1px 3px rgba(0,0,0,0.1)', overflow: 'hidden', position: 'relative' };
-const imageStyle = { width: '30%', height: '30%', objectFit: 'contain', opacity: 0.3, mixBlendMode: 'multiply', filter: 'brightness(0.6)' };
+const titleStyle = {
+  fontSize: '0.9rem',
+  fontWeight: '500',
+  textAlign: 'left',
+  margin: 0,
+  transition: 'color 0.3s ease-in-out',
+};
+const buttonContainerStyle = {
+  flexGrow: 1,
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  position: 'relative', // Important for layering
+  padding: 10
+};
+const frameStyle = {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  objectFit: 'contain',
+  pointerEvents: 'none', // Let clicks pass through the frame
+  zIndex: 2,
+};
+
+const getFrameWrapperStyle = (isDarkMode) => ({
+  backgroundImage: `url(${process.env.PUBLIC_URL}/${isDarkMode ? 'frame_black.jpg' : 'frame_light.jpg'})`,
+  backgroundSize: '100% 100%',
+  backgroundRepeat: 'no-repeat',
+  padding: '0%',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  width: '100%',
+  height: '100%',
+  boxSizing: 'border-box',
+  transition: 'background-image 0.5s ease-in-out',
+});
+const getButtonStyle = (isDarkMode) => ({
+  width: '65%',
+  height: '65%',
+  padding: 0,
+  border: 'none',
+  cursor: 'pointer',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  borderRadius: '8px',
+  overflow: 'hidden',
+  position: 'relative',
+  background: isDarkMode
+    ? 'linear-gradient(145deg, #1a264d, #20315D, #2b3e6a)'
+    : 'linear-gradient(135deg, #f0f0f0 0%, #d9d9d9 25%, #d9d9d9 75%, #f0f0f0 100%)',
+  boxShadow: isDarkMode
+    ? `
+        inset 2px 2px 4px rgba(255, 255, 255, 0.2), 
+        inset -2px -2px 6px rgba(0, 0, 0, 0.4),
+        1px 1px 2px rgba(0,0,0,0.3)
+      `
+    : `
+        'inset 1px 1px 3px rgba(255,255,255,0.8), inset -1px -1px 3px rgba(0,0,0,0.1)'
+      `,
+
+      transition: 'background 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+});
+const imageStyle = { width: '50%', height: '50%', objectFit: 'contain', opacity: 0.8, mixBlendMode: 'multiply', filter: 'brightness(0.6)' };
 const modalOverlayStyle = { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2 };
 const modalStyle = {
-  // aluminum background gradient
   background: 'linear-gradient(135deg, #f0f0f0 0%, #d9d9d9 25%, #d9d9d9 75%, #f0f0f0 100%)',
   padding: '20px',
   borderRadius: '8px',
@@ -177,11 +325,57 @@ const modalStyle = {
   maxWidth: '600px',
   height: '80%',
   maxHeight: '800px',
-  // stronger inset metallic shading plus subtle outer drop shadow
   boxShadow: 'inset 2px 2px 6px rgba(255,255,255,0.9), inset -2px -2px 6px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.3)',
   position: 'relative',
+
+  // ✨ ANIMATION
+  opacity: 0,
+  transform: 'scale(0.9)',
+  animation: 'fadeZoomIn 0.4s ease-out forwards',
 };
-const modalTitleStyle = { margin: '0 0 10px 0', fontSize: '1.2rem' };
+
+const modalTitleStyle = { margin: '0 0 10px 0', fontSize: '1.2rem', fontWeight: '400'};
 const modalContentStyle = { maxHeight: '200px', overflowY: 'auto', marginTop: '10px'};
 
+
+
+const pageTitleRowStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '0 10px 0px 0px',
+};
+
+const switchTrackStyle = {
+  width: '40px',
+  height: '20px',
+  borderRadius: '20px',
+  position: 'relative',
+  cursor: 'pointer',
+  transition: 'background-color 0.3s ease',
+};
+
+const switchThumbStyle = {
+  width: '16px',
+  height: '16px',
+  borderRadius: '50%',
+  position: 'absolute',
+  top: '2px',
+  left: '2px',
+  transition: 'transform 0.3s ease',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 0,
+};
+const backgroundFadeLayerStyle = {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  zIndex: 0,
+  transition: 'opacity 0.4s ease-in-out',
+  pointerEvents: 'none',
+};
 export default HomePage;
