@@ -59,7 +59,7 @@ const Background = ({ isDarkMode }) => {
 
 const HomePage = () => {
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
-  const [modal, setModal] = useState({ open: false, title: '' });
+  const [modal, setModal] = useState({ open: false, title: '', icon: '' });
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -153,6 +153,7 @@ useEffect(() => {
     { id: 8, title: 'D.U.K.' },
     { id: 9, title: 'KONTAKTAI' },
   ];
+  
 
   return (
     <>
@@ -160,7 +161,7 @@ useEffect(() => {
         <div
     style={{
       ...backgroundFadeLayerStyle,
-      background: 'linear-gradient(to bottom, #000013, #0E0058)',
+      background: 'linear-gradient(to bottom, #000013, #313D6B)',
       opacity: isDarkMode ? 1 : 0,
     }}
   />
@@ -178,12 +179,11 @@ useEffect(() => {
   <h2 style={{ ...pageTitleStyle, color: isDarkMode ? '#BEBEBE' : '#222' }}>
     ELEKTROS ARCHITEKTŪRA
   </h2>
-  <div
+  
+</div>
+<div
     onClick={() => setIsDarkMode(prev => !prev)}
-    style={{
-      ...switchTrackStyle,
-      backgroundColor: isDarkMode ? '#444' : '#ccc',
-    }}
+     style={{ ...switchTrackStyle, ...switchBoxStyle, backgroundColor: isDarkMode ? '#444' : '#ccc' }}
   >
     <div
       style={{
@@ -199,10 +199,9 @@ useEffect(() => {
       />
     </div>
   </div>
-</div>
           <div style={gridStyle}>
             {items.map(item => (
-              <div key={item.id} style={{ ...cellWrapperStyle, border: isDarkMode ? '4px double #BEBEBE' : '4px double #333',
+              <div key={item.id} style={{ ...cellWrapperStyle, border: isDarkMode ? '2px solid #BEBEBE' : '2px solid #333',
     color: isDarkMode ? '#BEBEBE' : '#222', }}>
                 <div style={titleContainerStyle}>
     <h3 style={titleStyle}>{item.title}</h3>
@@ -211,7 +210,7 @@ useEffect(() => {
     <div style={getFrameWrapperStyle(isDarkMode)}>
       <button
         style={getButtonStyle(isDarkMode)}
-        onClick={() => setModal({ open: true, title: item.title })}
+        onClick={() => setModal({ open: true, title: item.title, icon: `${process.env.PUBLIC_URL}/${item.id}.png` })}
       >
         <img
           src={`${process.env.PUBLIC_URL}/${item.id}.png`}
@@ -228,11 +227,14 @@ useEffect(() => {
       </div>
 
       {modal.open && (
-        <div style={modalOverlayStyle} onClick={() => setModal({ open: false, title: '' })}>
-  <div style={modalStyle} onClick={() => setModal({ open: false, title: '' })}>
-            <h3 style={modalTitleStyle}><b>{modal.title}</b></h3>
-            <hr></hr>
-            <div style={modalContentStyle}>
+        <div style={modalOverlayStyle} onClick={() => setModal({ open: false, title: '', icon: '' })}>
+    <div style={modalStyle} onClick={e => e.stopPropagation()}>
+      <div style={modalHeaderStyle}>
+        <img src={modal.icon} alt={modal.title} style={modalIconStyle} />
+        <h3 style={modalTitleStyle}>{modal.title}</h3>
+      </div>
+      <hr style={{ border: '1px solid #636363' }} />
+      <div style={modalContentStyle}>
               <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
               <p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
             </div>
@@ -248,12 +250,18 @@ useEffect(() => {
 const cellWrapperStyle = {
   width: '100%', aspectRatio: '1 / 1', border: '3px double #333', display: 'flex', flexDirection: 'column', alignItems: 'stretch', boxSizing: 'border-box', padding: '0', background: 'transparent', transition: 'border 0.3s ease-in-out, color 0.3s ease-in-out',
 };
-const titleContainerStyle = { padding: '10px', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center' };
+const titleContainerStyle = { padding: '10px', borderBottom: '1px solid #BEBEBE', display: 'flex', alignItems: 'center', margin: '0 10px'};
 const titleStyle = {
-  fontSize: '0.9rem',
-  fontWeight: '500',
+  
+
   textAlign: 'left',
+  fontSize: '0.9rem',
+  fontWeight: 500,
   margin: 0,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  
   transition: 'color 0.3s ease-in-out',
 };
 const buttonContainerStyle = {
@@ -276,33 +284,33 @@ const frameStyle = {
 };
 
 const getFrameWrapperStyle = (isDarkMode) => ({
-  backgroundImage: `url(${process.env.PUBLIC_URL}/${isDarkMode ? 'frame_black.jpg' : 'frame_light.jpg'})`,
+  backgroundImage: `url(${process.env.PUBLIC_URL}/${isDarkMode ? 'frame_black.png' : 'frame_light.png'})`,
   backgroundSize: '100% 100%',
   backgroundRepeat: 'no-repeat',
   padding: '0%',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
-  width: '100%',
-  height: '100%',
+  width: '70%',
+  height: '75%',
   boxSizing: 'border-box',
   transition: 'background-image 0.5s ease-in-out',
 });
 const getButtonStyle = (isDarkMode) => ({
-  width: '65%',
-  height: '65%',
+  width: '85%',
+  height: '85%',
   padding: 0,
   border: 'none',
   cursor: 'pointer',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
-  borderRadius: '8px',
+
   overflow: 'hidden',
   position: 'relative',
   background: isDarkMode
-    ? 'linear-gradient(145deg, #1a264d, #20315D, #2b3e6a)'
-    : 'linear-gradient(135deg, #f0f0f0 0%, #d9d9d9 25%, #d9d9d9 75%, #f0f0f0 100%)',
+    ? 'linear-gradient(145deg, #6C7174, #96A0A6, #ACB4B8)'
+    : 'linear-gradient(135deg, #DEF3FE 0%, #CBDEE8 25%, #CBDEE8 75%, #DEF3FE 100%)',
   boxShadow: isDarkMode
     ? `
         inset 2px 2px 4px rgba(255, 255, 255, 0.2), 
@@ -320,7 +328,7 @@ const modalOverlayStyle = { position: 'fixed', top: 0, left: 0, width: '100%', h
 const modalStyle = {
   background: 'linear-gradient(135deg, #f0f0f0 0%, #d9d9d9 25%, #d9d9d9 75%, #f0f0f0 100%)',
   padding: '20px',
-  borderRadius: '8px',
+  borderRadius: '0px',
   width: '80%',
   maxWidth: '600px',
   height: '80%',
@@ -334,16 +342,23 @@ const modalStyle = {
   animation: 'fadeZoomIn 0.4s ease-out forwards',
 };
 
-const modalTitleStyle = { margin: '0 0 10px 0', fontSize: '1.2rem', fontWeight: '400'};
+const modalTitleStyle = { margin: '0 0 4px 0', fontSize: '1.2rem', fontWeight: '400'};
 const modalContentStyle = { maxHeight: '200px', overflowY: 'auto', marginTop: '10px'};
 
 
 
 const pageTitleRowStyle = {
   display: 'flex',
-  justifyContent: 'space-between',
+
   alignItems: 'center',
   padding: '0 10px 0px 0px',
+};
+
+const switchBoxStyle = {
+  position: 'absolute',
+  top: 10,
+  right: 10,
+  zIndex: 2,
 };
 
 const switchTrackStyle = {
@@ -378,4 +393,18 @@ const backgroundFadeLayerStyle = {
   transition: 'opacity 0.4s ease-in-out',
   pointerEvents: 'none',
 };
+
+const modalHeaderStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  marginBottom: '10px',
+};
+
+const modalIconStyle = {
+  width: '28px',
+  height: '28px',
+  objectFit: 'contain',
+};
+
 export default HomePage;
