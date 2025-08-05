@@ -52,20 +52,38 @@ const Background = ({ isDarkMode }) => {
     <svg
       ref={svgRef}
     
-      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0.03, pointerEvents: 'none' }}
+      style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', opacity: 0.03, pointerEvents: 'none' }}
     />
   );
 };
 
 const HomePage = () => {
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+  
   const [modal, setModal] = useState({ open: false, title: '', icon: '' });
+  const [hoveredId, setHoveredId] = useState(null);
+   const videoRefs = useRef({});
+  const closeModal = () => setModal({ open: false, title: '', icon: '' });
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+   useEffect(() => {
+    // pause all first
+    Object.values(videoRefs.current).forEach(video => {
+      if (video) {
+        video.pause();
+        video.currentTime = 0;
+      }
+    });
+    if (hoveredId !== null) {
+      const vid = videoRefs.current[hoveredId];
+      if (vid) vid.play();
+    }
+  }, [hoveredId]);
 
 const [isDarkMode, setIsDarkMode] = useState(true);
 
@@ -74,9 +92,9 @@ const [isDarkMode, setIsDarkMode] = useState(true);
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    height: isMobile ? 'auto' : '100vh',
-    margin: 0,
-    overflowY: isMobile ? 'auto' : 'hidden',
+    width: '100vw',
+    minHeight: isMobile ? 'auto' : '100vh',
+    overflowY: 'auto',
     filter: modal.open ? 'blur(4px)' : 'none', // blur background when modal open
     transition: 'filter 0.3s ease-in-out',
   };
@@ -100,16 +118,14 @@ const [isDarkMode, setIsDarkMode] = useState(true);
 
   const gridStyle = {
     display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '10px',
     width: '100%',
     height: '100%',
-    gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-    gridAutoRows: '1fr',
-    gap: '10px',
     padding: '10px',
     boxSizing: 'border-box',
-    zIndex: 1,
+    zIndex: 2,
   };
-
   const backgroundLayerStyle = {
   position: 'absolute',
   top: 0,
@@ -135,11 +151,28 @@ useEffect(() => {
         transform: scale(1);
       }
     }
+       @keyframes spinOnce {
+       0%   { transform: rotateY(0deg) rotateX(0deg); }
+    60%  { transform: rotateY(360deg) rotateX(15deg); }
+    100% { transform: rotateY(360deg) rotateX(0deg); }
+    }
   `;
   document.head.appendChild(styleTag);
 
+  
+const svgDefs = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svgDefs.setAttribute('style','position:absolute;width:0;height:0;');
+    svgDefs.innerHTML = `
+      <defs>
+        <filter id="noiseFilter">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" result="noise" />
+          <feBlend in="SourceGraphic" in2="noise" mode="multiply" />
+        </filter>
+      </defs>`;
+    document.body.appendChild(svgDefs);
   return () => {
     document.head.removeChild(styleTag); // Clean up on unmount
+     document.body.removeChild(svgDefs);
   };
 }, []);
   const items = [
@@ -153,7 +186,8 @@ useEffect(() => {
     { id: 8, title: 'D.U.K.' },
     { id: 9, title: 'KONTAKTAI' },
   ];
-  
+  const imageStyle = { width: '50%', height: '50%', objectFit: 'contain', mixBlendMode: 'multiply', filter: 'brightness(0.6)', transition: 'opacity 0.5s ease-in-out' };
+  const videoStyle = { width: '100%', height: '100%', objectFit: 'fill', pointerEvents: 'none', filter: 'contrast(1.2) brightness(1.1) saturate(1.3) blur(0.5px) url(#noiseFilter)', mixBlendMode: 'overlay', transition: 'opacity 0.5s ease-in-out' };
 
   return (
     <>
@@ -162,7 +196,7 @@ useEffect(() => {
     style={{
       ...backgroundFadeLayerStyle,
       background: 'linear-gradient(to bottom, #000013, #313D6B)',
-      opacity: isDarkMode ? 1 : 0,
+      opacity: isDarkMode ? 1 : 0, position: "fixed",
     }}
   />
   <div
@@ -200,37 +234,53 @@ useEffect(() => {
     </div>
   </div>
           <div style={gridStyle}>
-            {items.map(item => (
+            {items.map(item => {
+              const isHover = hoveredId === item.id;
+            return (
               <div key={item.id} style={{ ...cellWrapperStyle, border: isDarkMode ? '2px solid #BEBEBE' : '2px solid #333',
     color: isDarkMode ? '#BEBEBE' : '#222', }}>
+      
                 <div style={titleContainerStyle}>
     <h3 style={titleStyle}>{item.title}</h3>
   </div>
   <div style={buttonContainerStyle}>
     <div style={getFrameWrapperStyle(isDarkMode)}>
-      <button
-        style={getButtonStyle(isDarkMode)}
-        onClick={() => setModal({ open: true, title: item.title, icon: `${process.env.PUBLIC_URL}/${item.id}.png` })}
-      >
-        <img
-          src={`${process.env.PUBLIC_URL}/${item.id}.png`}
-          alt={item.title}
-          style={imageStyle}
-        />
-                  </button>
+       <button
+                      style={getButtonStyle(isDarkMode)}
+                      onClick={() => setModal({ open: true, title: item.title, icon: `${process.env.PUBLIC_URL}/${item.id}.png` })}
+                      onMouseEnter={() => setHoveredId(item.id)}
+                      onMouseLeave={() => setHoveredId(null)}
+                    >
+         
+                         <video
+                            ref={el => { videoRefs.current[item.id] = el; }}
+                            src={`${process.env.PUBLIC_URL}/${item.id}.mp4`}
+                            style={{ ...videoStyle, position: 'absolute', top: 0, left: 0, opacity: isHover ? 1 : 0 }}
+                            loop
+                            muted
+                          />
+                     
+                        <img
+                            src={`${process.env.PUBLIC_URL}/${item.id}.png`}
+                            alt={item.title}
+                            style={{ ...imageStyle, position: 'centered', top: 0, left: 0, opacity: isHover ? 0 : 0.8 }}
+                          />
+                      
+                    </button>
                 </div>
                 </div>
               </div>
-            ))}
+            );
+})}
           </div>
         </div>
       </div>
 
       {modal.open && (
         <div style={modalOverlayStyle} onClick={() => setModal({ open: false, title: '', icon: '' })}>
-    <div style={modalStyle} onClick={e => e.stopPropagation()}>
+    <div style={modalStyle} onClick={closeModal}>
       <div style={modalHeaderStyle}>
-        <img src={modal.icon} alt={modal.title} style={modalIconStyle} />
+        <img src={modal.icon} alt={modal.title} style={{ ...modalIconStyle, animation: 'spinOnce 1.0s ease-out 1' }} />
         <h3 style={modalTitleStyle}>{modal.title}</h3>
       </div>
       <hr style={{ border: '1px solid #636363' }} />
@@ -310,7 +360,7 @@ const getButtonStyle = (isDarkMode) => ({
   position: 'relative',
   background: isDarkMode
     ? 'linear-gradient(145deg, #6C7174, #96A0A6, #ACB4B8)'
-    : 'linear-gradient(135deg, #DEF3FE 0%, #CBDEE8 25%, #CBDEE8 75%, #DEF3FE 100%)',
+    : 'linear-gradient(135deg, #f0efefff 0%, #e4e3e2ff 25%, #cacac8ff 75%, #CBC9C5 100%)',
   boxShadow: isDarkMode
     ? `
         inset 2px 2px 4px rgba(255, 255, 255, 0.2), 
